@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🔐 Phishing URL Detector</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+
+    canvas#bgCanvas {
+      position: fixed; top: 0; left: 0; z-index: -1;
+    }
+
+    body {
+      background: #0f172a; padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 30px; border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+      max-width: 550px; width: 100%;
+      margin: 60px auto; position: relative;
+      transition: background 0.3s, color 0.3s;
+      color: #1e293b;
+    }
+
+    .typing {
+      overflow: hidden; white-space: nowrap; width: 0;
+      margin: 0 auto 20px auto; font-size: 1.8rem;
+      font-weight: bold; color: #1e293b;
+      border-right: 3px solid #3b82f6;
+      animation: typing 3.5s steps(40, end) forwards;
+    }
+
+    @keyframes typing { from { width: 0 } to { width: 100% } }
+
+    label { font-weight: 600; display: block; margin-bottom: 8px; color: #334155; }
+    input[type="text"] {
+      width: 100%; padding: 12px; font-size: 1rem; margin-bottom: 16px;
+      border: 1px solid #ccc; border-radius: 8px; outline: none;
+      background-color: white; color: #1e293b;
+    }
+    input[type="text"]:focus {
+      border-color: #3b82f6; box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+    }
+
+    button {
+      background: #3b82f6; color: white;
+      padding: 12px 20px; font-size: 1rem; border: none;
+      border-radius: 8px; cursor: pointer; width: 100%;
+      transition: background 0.3s, transform 0.2s;
+      margin-top: 8px;
+    }
+
+    button:hover { background: #2563eb; transform: scale(1.02); }
+
+    #themeToggle {
+      width: auto; padding: 8px 14px; font-size: 0.9rem;
+      position: fixed; top: 20px; right: 20px;
+    }
+
+    .result {
+      display: none; margin-top: 20px; padding: 16px;
+      border-radius: 10px; font-size: 1rem; line-height: 1.6;
+    }
+    .safe {
+      background: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9;
+    }
+    .danger {
+      background: #ffebee; color: #b71c1c; border: 1px solid #ef9a9a;
+    }
+    .warning {
+      background: #fffde7; color: #f57f17; border: 1px solid #fff59d;
+    }
+
+    .feature-list { margin-top: 30px; color: #374151; }
+    .feature-list ul { padding-left: 20px; line-height: 1.6; }
+
+    .history-section {
+      margin-top: 30px; padding-top: 15px; border-top: 1px solid #ccc;
+      color: #374151;
+    }
+    .history-section ul {
+      list-style: none; padding-left: 0; margin-top: 10px;
+    }
+    .history-section li {
+      padding: 8px 12px; border-radius: 8px; background: #f1f5f9;
+      margin-bottom: 6px; font-size: 0.95rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .history-section li.safe { background: #e8f5e9; color: #1b5e20; }
+    .history-section li.phishing { background: #ffebee; color: #b71c1c; }
+
+    .dark-mode .container { background: rgba(30, 41, 59, 0.95); color: white; }
+    .dark-mode input[type="text"] { background-color: #1e293b; color: white; border-color: #334155; }
+    .dark-mode label,
+    .dark-mode .feature-list,
+    .dark-mode .feature-list ul,
+    .dark-mode .typing,
+    .dark-mode .history-section,
+    .dark-mode .history-section li { color: white; }
+    .dark-mode .history-section li.safe { background: #1b4332; color: #b9fbc0; }
+    .dark-mode .history-section li.phishing { background: #432818; color: #fca5a5; }
+
+    @media (max-width: 600px) { .container { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+  <button id="themeToggle">🌗 Toggle Theme</button>
+
+  <div class="container">
+    <h1 class="typing">🔐 Phishing URL Detector</h1>
+    <form id="urlForm">
+      <label for="url">🌐 Enter a URL:</label>
+      <input type="text" id="url" placeholder="e.g. https://example.com" required />
+      <button type="submit">🚀 Scan URL</button>
+      <button type="button" id="pasteBtn">📋 Paste URL</button>
+    </form>
+    <div id="result" class="result"></div>
+
+    <div class="feature-list">
+      <h2>🛡️ How We Protect You:</h2>
+      <ul>
+        <li>🔍 Detects IP-based URLs (e.g., http://192.168.0.1)</li>
+        <li>🧹 Identifies shorteners (like bit.ly)</li>
+        <li>🔀 Flags suspicious subdomains (e.g., facebook.com.evil.com)</li>
+        <li>⚠️ Checks weird extensions (.tk, .xyz)</li>
+        <li>❗ Spots special symbols ('@', '-', etc.)</li>
+      </ul>
+    </div>
+
+    <div id="history" class="history-section">
+      <h2>🗾️ Scan History</h2>
+      <ul id="historyList">
+        <li class="phishing"><span>http://192.168.1.1</span><strong>⚠️ Phishing</strong></li>
+        <li class="phishing"><span>https://facebook.com.evil.tk</span><strong>⚠️ Phishing</strong></li>
+        <li class="phishing"><span>http://login-verify-paypal.tk</span><strong>⚠️ Phishing</strong></li>
+        <li class="safe"><span>https://openai.com</span><strong>✅ Safe</strong></li>
+        <li class="safe"><span>https://github.com</span><strong>✅ Safe</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const urlForm = document.getElementById("urlForm");
+    const resultDiv = document.getElementById("result");
+    const themeToggle = document.getElementById("themeToggle");
+    const pasteBtn = document.getElementById("pasteBtn");
+    const historyList = document.getElementById("historyList");
+
+    urlForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const urlInput = document.getElementById("url").value.trim();
+      resultDiv.style.display = "none";
+      resultDiv.className = "result";
+
+      if (!urlInput) {
+        resultDiv.textContent = "❗ Please enter a valid URL!";
+        resultDiv.classList.add("warning");
+        resultDiv.style.display = "block";
+        return;
+      }
+
+      fetch("http://127.0.0.1:5000/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: urlInput }),
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        const { prediction } = data;
+        if (prediction === 1) {
+          resultDiv.classList.add("danger");
+          resultDiv.innerHTML = `
+            <h3>⚠️ Warning: Phishing suspected!</h3>
+            <p>This URL looks suspicious. Avoid clicking it.</p>`;
+        } else {
+          resultDiv.classList.add("safe");
+          resultDiv.innerHTML = `
+            <h3>✅ Safe: URL is clean!</h3>
+            <p>No phishing patterns were found. You are safe.</p>`;
+        }
+        resultDiv.style.display = "block";
+
+        const li = document.createElement("li");
+        li.className = prediction === 1 ? "phishing" : "safe";
+        li.innerHTML = `
+          <span>${urlInput}</span>
+          <strong>${prediction === 1 ? "⚠️ Phishing" : "✅ Safe"}</strong>`;
+        historyList.prepend(li);
+      })
+      .catch(() => {
+        resultDiv.classList.add("danger");
+        resultDiv.innerHTML = `
+          <h3>❌ Error</h3>
+          <p>Unable to connect to the server.</p>`;
+        resultDiv.style.display = "block";
+      });
+    });
+
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+    });
+
+    pasteBtn.addEventListener("click", async () => {
+      const text = await navigator.clipboard.readText();
+      document.getElementById("url").value = text;
+    });
+
+    const canvas = document.getElementById("bgCanvas");
+    const ctx = canvas.getContext("2d");
+    let width, height, points;
+
+    function initCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      points = [];
+      for (let i = 0; i < 100; i++) {
+        points.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5
+        });
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      for (let p of points) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#3b82f650";
+        ctx.fill();
+      }
+      for (let i = 0; i < points.length; i++) {
+        for (let j = i + 1; j < points.length; j++) {
+          const p1 = points[i];
+          const p2 = points[j];
+          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+          if (dist < 100) {
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = "#3b82f630";
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener("resize", initCanvas);
+    initCanvas();
+    draw();
+  </script>
+</body>
+</html>
