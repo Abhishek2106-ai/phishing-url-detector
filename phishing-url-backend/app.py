@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
+import os  # 👈 Import os for Render's port
 
 app = Flask(__name__)
 CORS(app)
@@ -41,5 +42,9 @@ def predict():
 def history():
     return jsonify(scan_history)
 
+# 🔥 Required for Render: use dynamic port + host
 if __name__ == '__main__':
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)
+
