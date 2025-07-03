@@ -28,6 +28,9 @@ This is a simple web app that detects whether a given URL is **safe** or **phish
 2. Click "Scan URL"
 3. See if it's **safe** or **phishing**
 
+![phishing-url-detector-frontend-rge9 onrender com_](https://github.com/user-attachments/assets/8d30bb7c-cb21-4391-9a96-f8b23f0ad6e9)
+
+
 ---
 
 Made with ❤️ using Python + HTML/CSS/JS
