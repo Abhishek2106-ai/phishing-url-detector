@@ -27,14 +27,25 @@
     }
 
     .typing {
-      overflow: hidden; white-space: nowrap; width: 0;
-      margin: 0 auto 20px auto; font-size: 1.8rem;
-      font-weight: bold; color: #1e293b;
+      overflow: hidden;
+      white-space: nowrap;
+      width: 0;
+      margin: 0 auto 20px auto;
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #1e293b;
       border-right: 3px solid #3b82f6;
-      animation: typing 3.5s steps(40, end) forwards;
+      animation: typing 3.5s steps(40, end) forwards, removeBorder 0s 3.6s forwards;
     }
 
-    @keyframes typing { from { width: 0 } to { width: 100% } }
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+
+    @keyframes removeBorder {
+      to { border-right: none; }
+    }
 
     label { font-weight: 600; display: block; margin-bottom: 8px; color: #334155; }
     input[type="text"] {
@@ -134,164 +145,146 @@
 
     <div id="history" class="history-section">
       <h2>🗾️ Scan History</h2>
-      <ul id="historyList">
-        <li class="phishing"><span>http://192.168.1.1</span><strong>⚠️ Phishing</strong></li>
-        <li class="phishing"><span>https://facebook.com.evil.tk</span><strong>⚠️ Phishing</strong></li>
-        <li class="phishing"><span>http://login-verify-paypal.tk</span><strong>⚠️ Phishing</strong></li>
-        <li class="safe"><span>https://openai.com</span><strong>✅ Safe</strong></li>
-        <li class="safe"><span>https://github.com</span><strong>✅ Safe</strong></li>
-      </ul>
+      <ul id="historyList"></ul>
     </div>
   </div>
 
   <script>
     const urlForm = document.getElementById("urlForm");
-const resultDiv = document.getElementById("result");
-const themeToggle = document.getElementById("themeToggle");
-const pasteBtn = document.getElementById("pasteBtn");
-const historyList = document.getElementById("historyList");
+    const resultDiv = document.getElementById("result");
+    const themeToggle = document.getElementById("themeToggle");
+    const pasteBtn = document.getElementById("pasteBtn");
+    const historyList = document.getElementById("historyList");
 
-urlForm.addEventListener("submit", function (e) {
-  e.preventDefault();
-  const urlInput = document.getElementById("url").value.trim();
-  resultDiv.style.display = "none";
-  resultDiv.className = "result";
+    urlForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const urlInput = document.getElementById("url").value.trim();
+      resultDiv.style.display = "none";
+      resultDiv.className = "result";
 
-  if (!urlInput) {
-    resultDiv.textContent = "❗ Please enter a valid URL!";
-    resultDiv.classList.add("warning");
-    resultDiv.style.display = "block";
-    return;
-  }
+      if (!urlInput) {
+        resultDiv.textContent = "❗ Please enter a valid URL!";
+        resultDiv.classList.add("warning");
+        resultDiv.style.display = "block";
+        return;
+      }
 
-  fetch("https://phishing-url-detector-backend-09i5.onrender.com/predict", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url: urlInput }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      const { prediction, url, timestamp } = data;
-      if (prediction === 1) {
+      fetch("https://phishing-url-detector-backend-09i5.onrender.com/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: urlInput }),
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        const { prediction, timestamp } = data;
+        if (prediction === 1) {
+          resultDiv.classList.add("danger");
+          resultDiv.innerHTML = `
+            <h3>⚠️ Warning: Phishing suspected!</h3>
+            <p>This URL looks suspicious. Avoid clicking it.</p>
+            <p>🕒 Scanned at: ${timestamp}</p>`;
+        } else {
+          resultDiv.classList.add("safe");
+          resultDiv.innerHTML = `
+            <h3>✅ Safe: URL is clean!</h3>
+            <p>No phishing patterns were found. You are safe.</p>
+            <p>🕒 Scanned at: ${timestamp}</p>`;
+        }
+        resultDiv.style.display = "block";
+
+        const li = document.createElement("li");
+        li.className = prediction === 1 ? "phishing" : "safe";
+        li.innerHTML = `
+          <span>${urlInput}</span>
+          <strong>${prediction === 1 ? "⚠️ Phishing" : "✅ Safe"}</strong>`;
+        historyList.prepend(li);
+      })
+      .catch(() => {
         resultDiv.classList.add("danger");
         resultDiv.innerHTML = `
-          <h3>⚠️ Warning: Phishing suspected!</h3>
-          <p>This URL looks suspicious. Avoid clicking it.</p>
-          <p><small>🕒 Scanned at: ${timestamp}</small></p>`;
-      } else {
-        resultDiv.classList.add("safe");
-        resultDiv.innerHTML = `
-          <h3>✅ Safe: URL is clean!</h3>
-          <p>No phishing patterns were found. You are safe.</p>
-          <p><small>🕒 Scanned at: ${timestamp}</small></p>`;
-      }
-      resultDiv.style.display = "block";
-
-      const li = document.createElement("li");
-      li.className = prediction === 1 ? "phishing" : "safe";
-      li.innerHTML = `
-        <span>${url}</span>
-        <strong>${prediction === 1 ? "⚠️ Phishing" : "✅ Safe"}</strong>
-        <small style="margin-left:auto; font-size: 0.8rem; color: #94a3b8;">🕒 ${timestamp}</small>
-      `;
-      historyList.prepend(li);
-    })
-    .catch(() => {
-      resultDiv.classList.add("danger");
-      resultDiv.innerHTML = `
-        <h3>❌ Error</h3>
-        <p>Unable to connect to the server.</p>`;
-      resultDiv.style.display = "block";
+          <h3>❌ Error</h3>
+          <p>Unable to connect to the server.</p>`;
+        resultDiv.style.display = "block";
+      });
     });
-});
 
-themeToggle.addEventListener("click", () => {
-  document.body.classList.toggle("dark-mode");
-});
-
-pasteBtn.addEventListener("click", async () => {
-  const text = await navigator.clipboard.readText();
-  document.getElementById("url").value = text;
-});
-
-// Background canvas animation (keep unchanged)
-const canvas = document.getElementById("bgCanvas");
-const ctx = canvas.getContext("2d");
-let width, height, points;
-
-function initCanvas() {
-  width = canvas.width = window.innerWidth;
-  height = canvas.height = window.innerHeight;
-  points = [];
-  for (let i = 0; i < 100; i++) {
-    points.push({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.5,
-      vy: (Math.random() - 0.5) * 0.5
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
     });
-  }
-}
 
-function draw() {
-  ctx.clearRect(0, 0, width, height);
-  for (let p of points) {
-    p.x += p.vx; p.y += p.vy;
-    if (p.x < 0 || p.x > width) p.vx *= -1;
-    if (p.y < 0 || p.y > height) p.vy *= -1;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-    ctx.fillStyle = "#3b82f650";
-    ctx.fill();
-  }
-  for (let i = 0; i < points.length; i++) {
-    for (let j = i + 1; j < points.length; j++) {
-      const p1 = points[i];
-      const p2 = points[j];
-      const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-      if (dist < 100) {
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.strokeStyle = "#3b82f630";
-        ctx.stroke();
+    pasteBtn.addEventListener("click", async () => {
+      const text = await navigator.clipboard.readText();
+      document.getElementById("url").value = text;
+    });
+
+    const canvas = document.getElementById("bgCanvas");
+    const ctx = canvas.getContext("2d");
+    let width, height, points;
+
+    function initCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      points = [];
+      for (let i = 0; i < 100; i++) {
+        points.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5
+        });
       }
     }
-  }
-  requestAnimationFrame(draw);
-}
 
-window.addEventListener("resize", initCanvas);
-initCanvas();
-draw();
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      for (let p of points) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#3b82f650";
+        ctx.fill();
+      }
+      for (let i = 0; i < points.length; i++) {
+        for (let j = i + 1; j < points.length; j++) {
+          const p1 = points[i];
+          const p2 = points[j];
+          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+          if (dist < 100) {
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = "#3b82f630";
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(draw);
+    }
 
-// Load history from backend
-window.addEventListener("DOMContentLoaded", () => {
-  fetch("https://phishing-url-detector-backend-09i5.onrender.com/history")
-    .then(res => res.json())
-    .then(history => {
-      historyList.innerHTML = "";
-      history.forEach(entry => {
-        const li = document.createElement("li");
-        li.className = entry.prediction === 1 ? "phishing" : "safe";
-        li.innerHTML = `
-          <span>${entry.url}</span>
-          <strong>${entry.prediction === 1 ? "⚠️ Phishing" : "✅ Safe"}</strong>
-          <small style="margin-left:auto; font-size: 0.8rem; color: #94a3b8;">🕒 ${entry.timestamp}</small>
-        `;
-        historyList.appendChild(li);
-      });
-    })
-    .catch((error) => {
-      console.error("Fetch error:", error);
-      resultDiv.classList.add("danger");
-      resultDiv.innerHTML = `
-        <h3>❌ Error</h3>
-        <p>Unable to connect to the server.</p>`;
-      resultDiv.style.display = "block";
+    window.addEventListener("resize", initCanvas);
+    initCanvas();
+    draw();
+
+    window.addEventListener("DOMContentLoaded", () => {
+      fetch("https://phishing-url-detector-backend-09i5.onrender.com/history")
+        .then(res => res.json())
+        .then(history => {
+          historyList.innerHTML = "";
+          history.forEach(entry => {
+            const li = document.createElement("li");
+            li.className = entry.prediction === 1 ? "phishing" : "safe";
+            li.innerHTML = `
+              <span>${entry.url}</span>
+              <strong>${entry.prediction === 1 ? "⚠️ Phishing" : "✅ Safe"}</strong>`;
+            historyList.appendChild(li);
+          });
+        })
+        .catch((error) => {
+          console.error("Fetch error:", error);
+        });
     });
-});
-
   </script>
 </body>
 </html>

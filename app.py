@@ -19,24 +19,26 @@ def is_phishing(url):
 def home():
     return "✅ Phishing Detector Backend is running!"
 
-# 🚀 Predict route
+# 🚀 Predict route (with timestamp)
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.get_json()
     url = data.get('url', '')
     prediction = is_phishing(url)
+    timestamp = datetime.now().strftime('%Y-%m-%d %I:%M %p')  # Add timestamp
 
     # Save to history
     scan_history.insert(0, {
         'url': url,
         'prediction': prediction,
-        'timestamp': datetime.now().strftime('%Y-%m-%d %I:%M %p')
+        'timestamp': timestamp
     })
 
     # Keep only last 20 entries
     scan_history[:] = scan_history[:20]
 
-    return jsonify({'prediction': prediction})
+    # Return both prediction and timestamp
+    return jsonify({'prediction': prediction, 'timestamp': timestamp})
 
 # 📜 History route
 @app.route('/history', methods=['GET'])
