@@ -270,17 +270,22 @@
     window.addEventListener("DOMContentLoaded", () => {
       fetch("https://phishing-url-detector-backend-09i5.onrender.com/history")
         .then(res => res.json())
-        .then(history => {
-          historyList.innerHTML = "";
-          history.forEach(entry => {
-            const li = document.createElement("li");
-            li.className = entry.prediction === 1 ? "phishing" : "safe";
-            li.innerHTML = `
-              <span>${entry.url}</span>
-              <strong>${entry.prediction === 1 ? "⚠️ Phishing" : "✅ Safe"}</strong>`;
-            historyList.appendChild(li);
-          });
-        })
+       .then(history => {
+  historyList.innerHTML = ""; // Clear old content
+  history.forEach(entry => {
+    const li = document.createElement("li");
+    li.className = entry.prediction === 1 ? "phishing" : "safe";
+    li.innerHTML = `
+      <span>${entry.url}</span>
+      <div style="text-align: right;">
+        <strong>${entry.prediction === 1 ? "⚠️ Phishing" : "✅ Safe"}</strong><br/>
+        <small>🕒 Scanned at: ${entry.timestamp || 'Unknown'}</small>
+      </div>
+    `;
+    historyList.appendChild(li);
+  });
+})
+
         .catch((error) => {
           console.error("Fetch error:", error);
         });
