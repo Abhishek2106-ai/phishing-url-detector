@@ -164,7 +164,7 @@
         return;
       }
 
-      fetch("http://127.0.0.1:5000/predict", {
+      fetch("https://phishing-url-detector-backend-09i5.onrender.com/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: urlInput }),
@@ -259,6 +259,37 @@
     window.addEventListener("resize", initCanvas);
     initCanvas();
     draw();
+    // Fetch scan history from backend on page load
+window.addEventListener("DOMContentLoaded", () => {
+
+
+fetch("https://phishing-url-detector-backend-09i5.onrender.com/history")
+
+
+
+    .then(res => res.json())
+    .then(history => {
+      historyList.innerHTML = ""; // Clear old content
+      history.forEach(entry => {
+        const li = document.createElement("li");
+        li.className = entry.prediction === 1 ? "phishing" : "safe";
+        li.innerHTML = `
+          <span>${entry.url}</span>
+          <strong>${entry.prediction === 1 ? "⚠️ Phishing" : "✅ Safe"}</strong>
+        `;
+        historyList.appendChild(li);
+      });
+    })
+    .catch((error) => {
+  console.error("Fetch error:", error);
+  resultDiv.classList.add("danger");
+  resultDiv.innerHTML = `
+    <h3>❌ Error</h3>
+    <p>Unable to connect to the server.</p>`;
+  resultDiv.style.display = "block";
+});
+});
+
   </script>
 </body>
 </html>
