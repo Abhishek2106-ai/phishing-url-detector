@@ -1,58 +1,49 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
-<<<<<<< HEAD
-import os  # 👈 Import os for Render's port
-=======
->>>>>>> 75eab43718f21ef628d80c355a6bec31101f895f
+import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-# In-memory history list
+# In-memory scan history
 scan_history = []
 
+# Dummy phishing check function
 def is_phishing(url):
-    """
-    Replace this logic with your real ML model.
-    For now, returns 1 if suspicious, else 0.
-    """
     suspicious_keywords = ['@', 'bit.ly', 'tinyurl', 'xyz', 'tk']
-    if any(keyword in url for keyword in suspicious_keywords):
-        return 1
-    return 0
+    return 1 if any(keyword in url for keyword in suspicious_keywords) else 0
 
+# ✅ Root route to confirm backend is running
+@app.route('/')
+def home():
+    return "✅ Phishing Detector Backend is running!"
+
+# 🚀 Predict route
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.get_json()
     url = data.get('url', '')
-
     prediction = is_phishing(url)
-    
-    # Store in history
+
+    # Save to history
     scan_history.insert(0, {
         'url': url,
         'prediction': prediction,
         'timestamp': datetime.now().strftime('%Y-%m-%d %I:%M %p')
     })
-    
-    # Limit history to last 20 entries
+
+    # Keep only last 20 entries
     scan_history[:] = scan_history[:20]
 
     return jsonify({'prediction': prediction})
 
+# 📜 History route
 @app.route('/history', methods=['GET'])
 def history():
     return jsonify(scan_history)
 
-<<<<<<< HEAD
-# 🔥 Required for Render: use dynamic port + host
+# 🔥 Run the app (Render uses dynamic port)
 if __name__ == '__main__':
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host='0.0.0.0', port=port)
-
-=======
-if __name__ == '__main__':
-    app.run(debug=True)
->>>>>>> 75eab43718f21ef628d80c355a6bec31101f895f
